@@ -1,0 +1,5 @@
+# T4, вариант B: только плагин privacy (MathJax по ссылке на CDN, плагин копирует tex-chtml.js, но не шрифты)
+INHERIT: mkdocs.yml
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js

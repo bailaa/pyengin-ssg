@@ -1,0 +1,77 @@
+site_name: PythEngin · Задание 3 — SSG
+site_description: Отчёт по заданию 3 «Генераторы статических сайтов» (T4 + P4) на примере результатов WaySense
+site_author: Марина Ефимова
+# Базовый URL задаётся окружением: у GitHub Pages и Helios разные корни
+# (https://bailaa.github.io/pyengin-ssg/ и https://se.ifmo.ru/~sXXXXXX/[preview/<ветка>/]).
+site_url: !ENV [SITE_URL, "http://127.0.0.1:8000/"]
+repo_url: https://github.com/bailaa/pyengin-ssg
+repo_name: bailaa/pyengin-ssg
+edit_uri: edit/main/docs/
+copyright: Текст — CC BY 4.0, код — MIT
+
+# Относительные ссылки вида page/ работают в любом подкаталоге, если сервер отдаёт index.html
+use_directory_urls: true
+
+theme:
+  name: material
+  language: ru
+  custom_dir: overrides
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.highlight
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle: {icon: material/weather-night, name: Тёмная тема}
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle: {icon: material/weather-sunny, name: Светлая тема}
+
+hooks:
+  - hooks/results.py
+
+plugins:
+  - search:
+      lang: [ru, en]
+  # Скачивает внешние ресурсы (Google Fonts, MathJax) при сборке и отдаёт их с того же хоста — см. T4
+  - privacy:
+      enabled: !ENV [OFFLINE_ASSETS, true]
+      # бейджи статуса должны оставаться живыми, их не копируем
+      assets_exclude:
+        - github.com/*
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - footnotes
+  - tables
+  - toc: {permalink: true}
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight: {anchor_linenums: true, linenums_style: pymdownx-inline}
+  - pymdownx.inlinehilite
+  - pymdownx.snippets: {base_path: [docs, .], check_paths: true}
+  - pymdownx.arithmatex: {generic: true}
+  - pymdownx.tabbed: {alternate_style: true}
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - assets/mathjax/tex-chtml.js   # MathJax 3.2.2 со шрифтами, локально (scripts/vendor_mathjax.py)
+
+not_in_nav: |
+  results/generated/*.md
+
+nav:
+  - Главная: index.md
+  - Ход работы: setup.md
+  - Результаты WaySense: results/index.md
+  - "T4. Доставка и безопасность": t4.md
+  - "P4. Деплой на Helios": p4.md
+  - Отладка: debugging.md
+  - Вывод: conclusion.md
+  - Лицензии: license.md

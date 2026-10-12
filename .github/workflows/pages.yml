@@ -1,0 +1,55 @@
+# Сборка и публикация на GitHub Pages официальной связкой upload-pages-artifact + deploy-pages.
+# Pages → Source = GitHub Actions. Сторонние actions зафиксированы по SHA коммита (см. T4).
+name: pages
+
+on:
+  push:
+    branches: ["**"]          # любая ветка: собираем; публикуем только main
+  pull_request:              # PR из форка: без секретов и без деплоя, только сборка
+  workflow_dispatch:
+
+permissions:
+  contents: read             # минимум по умолчанию; права на Pages выдаются только job deploy
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    env:
+      SITE_URL: https://bailaa.github.io/pyengin-ssg/
+      DEPLOY_TARGET: github-pages
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: true                 # кэш uv по хешу uv.lock
+          cache-dependency-glob: uv.lock
+      - name: Install (frozen lock, Python из .python-version)
+        run: uv sync --frozen
+      - name: Lint — строгая сборка (битые ссылки и предупреждения = ошибка)
+        run: uv run mkdocs build --strict
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write           # публиковать в Pages
+      id-token: write        # OIDC-токен, которым deploy-pages подтверждает происхождение артефакта
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: {sparse-checkout: scripts}
+      - name: Healthcheck — код 200 и хеш коммита в HTML
+        run: ./scripts/healthcheck.sh "${{ steps.deploy.outputs.page_url }}" "$GITHUB_SHA"

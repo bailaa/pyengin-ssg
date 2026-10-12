@@ -1,0 +1,8 @@
+.venv/
+site/
+_build/
+__pycache__/
+.cache/
+*.pyc
+.DS_Store
+docs/results/generated/

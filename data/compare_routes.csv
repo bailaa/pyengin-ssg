@@ -1,0 +1,13 @@
+pair,graph,length_m,time_min,steps,escalators,elevators
+Wan Chai MTR → Emperor Hotel,osm,1146,17.3,0,0,0
+Wan Chai MTR → Emperor Hotel,3dpn,914,13.7,0,0,1
+Wan Chai MTR → Wah Yan College,osm,681,10.3,0,0,0
+Wan Chai MTR → Wah Yan College,3dpn,688,10.3,0,0,1
+Wan Chai MTR → Hopewell Centre,osm,563,8.6,0,1,1
+Wan Chai MTR → Hopewell Centre,3dpn,896,13.5,0,0,3
+Admiralty (Pacific Place) → Hong Kong Park,osm,583,8.8,0,0,0
+Admiralty (Pacific Place) → Hong Kong Park,3dpn,578,8.7,0,0,0
+Central MTR → Central Pier 3,osm,921,14.0,0,0,0
+Central MTR → Central Pier 3,3dpn,1032,15.5,0,0,2
+Prince's Building → Two IFC,osm,561,8.6,0,0,0
+Prince's Building → Two IFC,3dpn,715,10.7,0,0,2

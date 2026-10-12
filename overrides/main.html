@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block extrahead %}
+  {{ super() }}
+  {# Контрольная строка для healthcheck: по ней пайплайн убеждается, что выложена именно эта сборка #}
+  <meta name="build-commit" content="{{ config.extra.build.commit }}">
+  <meta name="build-target" content="{{ config.extra.build.target }}">
+{% endblock %}
+{% block footer %}
+  {{ super() }}
+  <div class="md-typeset build-stamp" style="text-align:center;font-size:.6rem;opacity:.7;padding:.4rem">
+    сборка <code>{{ config.extra.build.commit_short }}</code> · {{ config.extra.build.date }} ·
+    данные <code>{{ config.extra.build.dataset }}</code> · {{ config.extra.build.target }}
+  </div>
+{% endblock %}

@@ -1,0 +1,17 @@
+# Диагностика: доступен ли Helios (SSH :2222 и HTTPS se.ifmo.ru) с раннера GitHub. См. «Отладка».
+name: helios-probe
+on:
+  workflow_dispatch:
+  push:
+    paths: [.github/workflows/helios-probe.yml]
+permissions: {}
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          echo "runner IP: $(curl -s https://ifconfig.co) ($(curl -s https://ifconfig.co/country))"
+          echo "--- TCP 2222";  timeout 15 bash -c '</dev/tcp/helios.cs.ifmo.ru/2222' && echo open || echo closed
+          echo "--- SSH banner"; timeout 20 ssh-keyscan -p 2222 -T 15 helios.cs.ifmo.ru 2>&1 || true
+          echo "--- HTTPS se.ifmo.ru"; curl -sS -m 20 -o /dev/null -w '%{http_code} %{time_total}s\n' https://se.ifmo.ru/~t261087/ || true
+          echo "--- itmo.ru"; curl -sS -m 20 -o /dev/null -w '%{http_code}\n' https://itmo.ru/ || true
