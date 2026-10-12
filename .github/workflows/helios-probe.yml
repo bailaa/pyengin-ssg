@@ -1,17 +1,28 @@
-# Диагностика: доступен ли Helios (SSH :2222 и HTTPS se.ifmo.ru) с раннера GitHub. См. «Отладка».
+# Диагностика и демонстрация healthcheck на Helios (с раннера GitHub).
+#   sha пуст  → печатает, какая сборка сейчас отдаётся (код ответа + build-commit)
+#   sha задан → запускает scripts/healthcheck.sh с этим хешем (неверный хеш → job красная)
 name: helios-probe
 on:
   workflow_dispatch:
-  push:
-    paths: [.github/workflows/helios-probe.yml]
-permissions: {}
+    inputs:
+      sha:
+        description: ожидаемый build-commit (пусто — только показать текущий)
+        required: false
+permissions:
+  contents: read
 jobs:
   probe:
     runs-on: ubuntu-24.04
+    env:
+      URL: https://se.ifmo.ru/~${{ vars.HELIOS_USER }}/
     steps:
-      - run: |
-          echo "runner IP: $(curl -s https://ifconfig.co) ($(curl -s https://ifconfig.co/country))"
-          echo "--- TCP 2222";  timeout 15 bash -c '</dev/tcp/helios.cs.ifmo.ru/2222' && echo open || echo closed
-          echo "--- SSH banner"; timeout 20 ssh-keyscan -p 2222 -T 15 helios.cs.ifmo.ru 2>&1 || true
-          echo "--- HTTPS se.ifmo.ru"; curl -sS -m 20 -o /dev/null -w '%{http_code} %{time_total}s\n' https://se.ifmo.ru/~t261087/ || true
-          echo "--- itmo.ru"; curl -sS -m 20 -o /dev/null -w '%{http_code}\n' https://itmo.ru/ || true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: {sparse-checkout: scripts}
+      - name: Что отдаёт Helios сейчас
+        run: |
+          curl -sS -m 20 -o page.html -w 'HTTP %{http_code}, %{time_total}s\n' "$URL"
+          grep -o 'name="build-commit" content="[0-9a-f]*"' page.html
+      - name: Healthcheck с заданным хешем
+        if: inputs.sha != ''
+        env: { SHA: "${{ inputs.sha }}" }
+        run: ./scripts/healthcheck.sh "$URL" "$SHA" 3
