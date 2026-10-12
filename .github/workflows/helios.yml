@@ -29,6 +29,10 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash          # явный bash = -eo pipefail: ошибка rsync не теряется в конвейере с grep
+
 env:
   HOST: helios.cs.ifmo.ru
   PORT: "2222"
@@ -114,32 +118,34 @@ jobs:
             ServerAliveInterval 15
             ConnectTimeout 20
           CFG
-          ssh "$TARGET" 'echo connected: $(uname -sr)'
-          scp -q scripts/helios-activate.sh "$TARGET":ssg-activate.sh
+          # ключ привязан к ~/ssg/bin/ssg-gate.sh (command= в authorized_keys): shell недоступен,
+          # только rsync в ~/ssg/releases/ и подкоманды `ssg ...`
+          echo "текущий релиз $SLOT: $(ssh "$TARGET" ssg current "$SLOT")"
 
       - name: Удалить preview удалённой ветки
         if: github.event_name == 'delete'
-        run: ssh "$TARGET" "sh ssg-activate.sh remove '$SLOT'"
+        run: ssh "$TARGET" ssg remove "$SLOT"
 
       - name: Откат
         if: github.event_name == 'workflow_dispatch' && inputs.action == 'rollback'
         env: { REL: "${{ inputs.release }}" }
         run: |
-          ssh "$TARGET" "sh ssg-activate.sh rollback '$SLOT' '$REL'"
-          ssh "$TARGET" "sh ssg-activate.sh list '$SLOT'"
+          ssh "$TARGET" ssg rollback "$SLOT" $REL
+          ssh "$TARGET" ssg list "$SLOT"
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         if: needs.build.result == 'success'
         with: { name: site, path: site }
 
-      - name: Загрузка релиза (rsync, неизменённые файлы — жёсткие ссылки на текущий релиз)
+      - name: Загрузка релиза (rsync; совпадающие по содержимому файлы — жёсткие ссылки на текущий релиз)
         if: needs.build.result == 'success'
         run: |
           start=$(date +%s)
-          cur=$(ssh "$TARGET" "cat ssg/state/$SLOT/current 2>/dev/null || true")
-          link=${cur:+--link-dest=../$cur}
-          ssh "$TARGET" "mkdir -p ssg/releases/$SLOT"
-          rsync -rlptz --delete --chmod=Da+rx,Fa+r $link site/ "$TARGET:ssg/releases/$SLOT/$RELEASE/"
+          cur=$(ssh "$TARGET" ssg current "$SLOT")
+          # --checksum: сравнение по содержимому. По умолчанию rsync сравнивает размер+mtime,
+          # и --link-dest связывал разные файлы одинаковой длины (см. «Отладка»)
+          rsync -rlptzc --delete --stats ${cur:+--link-dest=../$cur} site/ "$TARGET:ssg/releases/$SLOT/$RELEASE/" \
+            | grep -E "Number of (regular )?files transferred|Total transferred file size|Total bytes sent"
           echo "UPLOAD_S=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
 
       - name: Активация релиза
@@ -147,24 +153,27 @@ jobs:
         if: needs.build.result == 'success'
         run: |
           start=$(date +%s)
-          ssh "$TARGET" "sh ssg-activate.sh activate '$SLOT' '$RELEASE'"
-          echo "| загрузка, с | активация, с |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| $UPLOAD_S | $(( $(date +%s) - start )) |" >> "$GITHUB_STEP_SUMMARY"
+          ssh "$TARGET" ssg activate "$SLOT" "$RELEASE"
+          {
+            echo "### Helios: $SLOT → $URL"
+            echo "| релиз | загрузка, с | активация, с |"
+            echo "|---|---:|---:|"
+            echo "| \`$RELEASE\` | $UPLOAD_S | $(( $(date +%s) - start )) |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Healthcheck — HTTP 200 и build-commit
         if: needs.build.result == 'success'
         run: |
           set +e
-          ./scripts/healthcheck.sh "$URL" "$GITHUB_SHA" 3; rc=$?
+          ./scripts/healthcheck.sh "$URL" "$GITHUB_SHA" 5; rc=$?
           if [ $rc = 2 ]; then
-            # se.ifmo.ru не отвечает на зарубежные IP раннеров GitHub — проверяем изнутри Helios
-            echo "::warning::se.ifmo.ru недоступен с раннера, проверка выполняется с самого Helios"
-            ssh "$TARGET" bash -s -- "$URL" "$GITHUB_SHA" 5 < scripts/healthcheck.sh; rc=$?
+            # se.ifmo.ru может не отвечать зарубежным адресам — тогда проверка выполняется с самого Helios
+            echo "::warning::se.ifmo.ru недоступен с раннера, проверка с Helios"
+            ssh "$TARGET" ssg check "$URL" "$GITHUB_SHA"; rc=$?
           fi
           exit $rc
 
       - name: Автооткат main при провале проверки
         # только если новый релиз уже был активирован, иначе «откат» снял бы рабочую версию
         if: failure() && env.SLOT == 'main' && steps.activate.outcome == 'success'
-        run: ssh "$TARGET" "sh ssg-activate.sh rollback main"
+        run: ssh "$TARGET" ssg rollback main
