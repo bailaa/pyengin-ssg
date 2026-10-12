@@ -5,6 +5,7 @@
 # Что делает на сервере: проверяет rsync/curl, ставит шлюз ~/ssg/bin/ssg-gate.sh,
 # создаёт ~/public_html, дописывает deploy-ключ в authorized_keys с restrict,command=…
 # и печатает отпечатки ключей хоста для сверки с HELIOS_KNOWN_HOSTS.
+# В CI: SSH_CMD='sshpass -e ssh -p 2222 -o StrictHostKeyChecking=yes' и SSHPASS=<пароль> (одноразово).
 set -euo pipefail
 user=$1 pub=$(cat "$2")
 here=$(cd "$(dirname "$0")" && pwd)
@@ -22,4 +23,4 @@ here=$(cd "$(dirname "$0")" && pwd)
   echo 'grep -qF "$(echo "$line" | cut -d" " -f3)" ~/.ssh/authorized_keys || echo "$line" >> ~/.ssh/authorized_keys'
   echo 'echo "== authorized_keys:"; grep -n ssg-gate ~/.ssh/authorized_keys | cut -c1-120'
   echo 'echo "== host keys:"; for f in /etc/ssh/ssh_host_*_key.pub; do ssh-keygen -lf "$f"; done'
-} | ssh -p 2222 -o StrictHostKeyChecking=ask "$user@helios.cs.ifmo.ru" 'sh -s'
+} | ${SSH_CMD:-ssh -p 2222 -o StrictHostKeyChecking=ask} "$user@helios.cs.ifmo.ru" 'sh -s'
