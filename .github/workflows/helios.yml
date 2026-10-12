@@ -144,8 +144,7 @@ jobs:
           cur=$(ssh "$TARGET" ssg current "$SLOT")
           # --checksum: сравнение по содержимому. По умолчанию rsync сравнивает размер+mtime,
           # и --link-dest связывал разные файлы одинаковой длины (см. «Отладка»)
-          rsync -rlptzc --delete --stats ${cur:+--link-dest=../$cur} site/ "$TARGET:ssg/releases/$SLOT/$RELEASE/" \
-            | grep -E "Number of (regular )?files transferred|Total transferred file size|Total bytes sent"
+          rsync -rlptzc --delete ${cur:+--link-dest=../$cur} site/ "$TARGET:ssg/releases/$SLOT/$RELEASE/"
           echo "UPLOAD_S=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
 
       - name: Активация релиза
