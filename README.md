@@ -8,7 +8,7 @@ T4 — модель доставки и безопасность пайплай�
 Публикуемые результаты — эксперимент [WaySense](https://github.com/bailaa/waysense) (доступные маршруты для колясок в Гонконге).
 
 - GitHub Pages: https://bailaa.github.io/pyengin-ssg/
-- Helios ИТМО: https://se.ifmo.ru/~sXXXXXX/
+- Helios ИТМО: https://se.ifmo.ru/~s566056/
 
 ```bash
 uv sync --frozen

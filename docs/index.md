@@ -7,7 +7,7 @@
 | Площадка | Адрес | Workflow |
 |---|---|---|
 | GitHub Pages | <https://bailaa.github.io/pyengin-ssg/> | [`pages.yml`](https://github.com/bailaa/pyengin-ssg/blob/main/.github/workflows/pages.yml) |
-| Helios ИТМО | `https://se.ifmo.ru/~sXXXXXX/` | [`helios.yml`](https://github.com/bailaa/pyengin-ssg/blob/main/.github/workflows/helios.yml) |
+| Helios ИТМО | `https://se.ifmo.ru/~s566056/` | [`helios.yml`](https://github.com/bailaa/pyengin-ssg/blob/main/.github/workflows/helios.yml) |
 
 [![pages](https://github.com/bailaa/pyengin-ssg/actions/workflows/pages.yml/badge.svg)](https://github.com/bailaa/pyengin-ssg/actions/workflows/pages.yml)
 [![helios](https://github.com/bailaa/pyengin-ssg/actions/workflows/helios.yml/badge.svg)](https://github.com/bailaa/pyengin-ssg/actions/workflows/helios.yml)
